@@ -1,0 +1,391 @@
+openapi: 3.1.0
+info:
+  title: Message Board
+  description: |-
+    API движка доски объявлений. Автор: Артемий Казаков.
+    Реализована пагинизация и авторизация пользователей.
+  version: 1.0.0-SNAPSHOT
+servers:
+  - url: http://localhost:8080/api/v1/
+tags:
+  - name: Full API
+    description: API for all users
+paths:
+  /register:
+    post:
+      tags:
+        - Registration API
+      summary: Register a new user
+      description: Register a new user using basic authentication with login and password.
+      operationId: RegisterUser
+      requestBody:
+        description: Register a new user using basic authentication
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful registration
+          content:
+            string:
+              example: You have been registered.
+
+        '401':
+          description: User with that login already is in use
+
+        '422':
+          description: Validation exception
+          content:
+            string:
+              example: Validation exception. ${exception in details}
+
+  /topic:
+    post:
+      tags:
+        - Full API
+      summary: Create a new topic
+      description: Create a new topic to the store. Every request generate new topic with new id, if input data is correct.
+      operationId: CreateTopic
+      requestBody:
+        description: Create a new topic
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTopic'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicWithMessages'
+        '400':
+          description: Invalid ID supplied
+          content:
+            string:
+              example: Invalid input.
+        '422':
+          description: Validation exception
+          content:
+            string:
+              example: Validation exception. ${exception in details}
+    put:
+      tags:
+        - Full API
+      summary: Update an existing topic
+      description: Update an existing topic by Id.
+      operationId: updateTopic
+      requestBody:
+        description: Update an existent topic in the store
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Topic'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TopicWithMessages'
+        '400':
+          description: Invalid ID supplied
+          content:
+            string:
+              example: Invalid input.
+        '404':
+          description: Topic not found
+          content:
+            string:
+              example: Not found such topic.
+        '422':
+          description: Validation exception
+          content:
+            string:
+              example: Validation exception. ${exception in details}
+    get:
+      tags:
+        - Full API
+      summary: Show all topics
+      description: View all topics.
+      operationId: listAllTopics
+      parameters:
+        - in: query
+          name: pageNumber
+          description: Number of page. By default, 0
+          schema:
+            type: integer
+            format: from 0
+          required: false
+
+        - in: query
+          name: pageSize
+          description: Size of each page by entity. By default, 10
+          schema:
+            type: integer
+            format: from 1
+          required: false
+
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Topic'
+        '422':
+          description: Validation exception. If input page query is incorrect
+          content:
+            string:
+              example: Validation exception. ${exception in details}
+  /topic/{topicId}:
+    get:
+      tags:
+        - Full API
+      summary: View messages of topic
+      description: Shows messages in topic.
+      operationId: ListTopicMessages
+      parameters:
+        - in: query
+          name: pageNumber
+          description: Number of page. By default, 0
+          schema:
+            type: integer
+            format: from 0
+          required: false
+
+        - in: query
+          name: pageSize
+          description: Size of each page by entity. By default, 10
+          schema:
+            type: integer
+            format: from 1
+          required: false
+
+        - name: topicId
+          in: path
+          description: ID of topic
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicWithMessages'
+        '400':
+          description: Invalid ID supplied
+          content:
+            string:
+              example: Invalid input.
+        '404':
+          description: Topic not found
+          content:
+            string:
+              example: Not found such topic.
+        '422':
+          description: Validation exception. If input page query is incorrect
+          content:
+            string:
+              example: Validation exception. ${exception in details}
+  /topic/{topicId}/message:
+    post:
+      tags:
+        - Full API
+      summary: Create a new message
+      description: Create a new message in topic
+      operationId: CreateMessage
+      parameters:
+        - name: topicId
+          in: path
+          description: ID of topic where add the message
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Create a new topic
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Message'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicWithMessages'
+        '400':
+          description: Invalid ID supplied
+          content:
+            string:
+              example: Invalid input.
+        '404':
+          description: Topic not found
+          content:
+            string:
+              example: Not found such topic.
+        '422':
+          description: Validation exception.
+          content:
+            string:
+              example: Validation exception. ${exception in details}
+    put:
+      tags:
+        - Full API
+      summary: Update an existing message
+      description: Update an existing message by Id
+      operationId: updateMessage
+      parameters:
+        - name: topicId
+          in: path
+          description: ID of topic where update the message
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Update an existent message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Message'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TopicWithMessages'
+        '400':
+          description: Invalid ID supplied
+          content:
+            string:
+              example: Invalid input.
+        '404':
+          description: Message not found
+          content:
+            string:
+              example: Not found such Message.
+        '422':
+          description: Validation exception.
+          content:
+            string:
+              example: Validation exception. ${exception in details}
+
+  /message/{messageId}:
+    delete:
+      tags:
+        - Full API
+      summary: Delete an existing message
+      description: Delete an existing message by Id. Delete topic if message is last in the topic.
+      operationId: deleteMessage
+      parameters:
+        - name: messageId
+          in: path
+          description: ID of message to delete
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Successful operation
+components:
+  schemas:
+    Topic:
+      required:
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          examples: [ 19a69803-97d8-4e71-bc91-d3b7151ab30d ]
+        name:
+          type: string
+          examples: [ Тестовая тема ]
+        created:
+          type: string
+          examples: [ 2024-12-03T15:23:17+03:00 ]
+    TopicWithMessages:
+      required:
+        - id
+        - name
+        - messages
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          examples: [ 19a69803-97d8-4e71-bc91-d3b7151ab30d ]
+        name:
+          type: string
+          examples: [ Тестовая тема ]
+        created:
+          type: string
+          examples: [ 2024-12-03T15:23:17+03:00 ]
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+    Message:
+      required:
+        - id
+        - text
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          examples: [ 2603eb0f-9295-402b-a958-8934bf400119 ]
+        text:
+          type: string
+          examples: [ Первое сообщение ]
+        author:
+          type: string
+          examples: [ Ivan ]
+        created:
+          type: string
+          examples: [ 2024-12-03T15:23:17+03:00 ]
+    NewTopic:
+      required:
+        - topicName
+        - message
+      type: object
+      properties:
+        topicName:
+          type: string
+          examples: [ Тестовая тема ]
+        message:
+          $ref: '#/components/schemas/Message'
+    RegistrationRequest:
+      required:
+        - login
+        - password
+      type: object
+      properties:
+        login:
+          type: string
+          examples: [ kirat ]
+        password:
+          type: string
+          examples: [ passwordkirat ]
